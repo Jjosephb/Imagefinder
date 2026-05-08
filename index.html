@@ -1,12 +1,111 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Educational Image Finder</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Educational Image Finder</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <div id="toast" class="toast hidden" role="status"></div>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Educational Image Finder</p>
+        <h1>Find open diagrams and images for tests, slides and worksheets.</h1>
+        <p class="hero-copy">Search Openverse, Wikimedia Commons and NASA, then save the image URL, source page, licence and attribution in one place.</p>
+      </div>
+      <div class="hero-card">
+        <strong>Default safety filter</strong>
+        <span>Public domain, CC0, CC BY, CC BY-SA, CC BY-NC and NASA educational/informational-use results.</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <form id="searchForm" class="search-panel">
+        <label class="field full">
+          <span>Search term</span>
+          <div class="search-row">
+            <input id="query" value="meiosis crossing over diagram" placeholder="e.g. sodium chloride ionic bonding diagram" />
+            <button id="searchButton" class="primary" type="submit">Search</button>
+          </div>
+        </label>
+
+        <label class="field full">
+          <span>Paste a question to generate a better image search</span>
+          <textarea id="questionText" placeholder="Paste a test question here, then click Generate search terms." rows="4"></textarea>
+        </label>
+
+        <div class="button-row">
+          <button type="button" id="generateTerms" class="secondary">Generate search terms</button>
+          <button type="button" id="createPlaceholder" class="secondary">Create placeholder</button>
+        </div>
+
+        <div class="grid-two">
+          <label class="field">
+            <span>Image type</span>
+            <select id="imageType">
+              <option value="diagram">Diagram / schematic</option>
+              <option value="labelled">Labelled diagram</option>
+              <option value="photo">Real-world photo</option>
+              <option value="background">Slide background</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Licence filter</span>
+            <select id="licence">
+              <option value="classroom">Classroom-safe broad</option>
+              <option value="commercialSafe">Avoid NC licences</option>
+              <option value="mostOpen">Public domain / CC0 only</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="source-group" aria-label="Sources">
+          <label class="check-pill"><input type="checkbox" name="sources" value="openverse" checked /> <span>Openverse</span></label>
+          <label class="check-pill"><input type="checkbox" name="sources" value="wikimedia" checked /> <span>Wikimedia</span></label>
+          <label class="check-pill"><input type="checkbox" name="sources" value="nasa" checked /> <span>NASA</span></label>
+        </div>
+
+        <div class="note-box"><strong>Use note:</strong> this app records licence information, but you should still open the source page before publishing or selling a resource.</div>
+      </form>
+
+      <aside class="tray">
+        <div class="tray-header">
+          <div>
+            <p class="eyebrow">Image tray</p>
+            <h2><span id="savedCount">0</span> saved</h2>
+          </div>
+          <button id="clearTray" class="ghost" disabled>Clear</button>
+        </div>
+        <div class="button-row stacked">
+          <button id="copyAttributions" class="secondary" disabled>Copy attribution page</button>
+          <button id="copyJson" class="secondary" disabled>Copy JSON for importer</button>
+        </div>
+        <div id="savedList" class="saved-list"><p class="muted">Saved images and placeholders will appear here.</p></div>
+      </aside>
+    </section>
+
+    <section id="errorBox" class="error-box hidden"></section>
+
+    <section class="results-head">
+      <div>
+        <p class="eyebrow">Results</p>
+        <h2 id="resultsTitle">Start a search</h2>
+      </div>
+      <p class="muted">Ranked by source fit, licence openness, likely diagram relevance and available image size.</p>
+    </section>
+
+    <section id="resultsGrid" class="results-grid">
+      <div class="empty-state">
+        <h3>Start with a topic or paste a question.</h3>
+        <p>For science tests, terms like “labelled diagram”, “schematic”, “structure”, “cycle” and “process” usually help.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js" defer></script>
+</body>
 </html>
