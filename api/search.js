@@ -2,9 +2,7 @@ const OPENVERSE_ENDPOINT = 'https://api.openverse.org/v1/images/';
 const WIKIMEDIA_ENDPOINT = 'https://commons.wikimedia.org/w/api.php';
 const NASA_ENDPOINT = 'https://images-api.nasa.gov/search';
 
-const ALLOWED_LICENSES = new Set([
-  'pdm', 'cc0', 'by', 'by-sa', 'by-nc', 'by-nc-sa', 'nasa', 'unknown'
-]);
+const ALLOWED_LICENSES = new Set(['pdm', 'cc0', 'by', 'by-sa', 'by-nc', 'by-nc-sa', 'nasa']);
 
 const LICENSE_RANK = {
   pdm: 100,
@@ -36,12 +34,12 @@ function cleanText(value = '') {
 
 function normaliseLicence(value = '') {
   const v = String(value).toLowerCase().replace(/^cc-/, '').replace(/\s+/g, '-');
-  if (v.includes('public-domain') || v.includes('pdm') || v === 'pd') return 'pdm';
-  if (v.includes('cc0')) return 'cc0';
-  if (v === 'by' || v.includes('cc-by-4') || v.includes('cc-by-3') || v.includes('attribution')) return 'by';
-  if (v.includes('by-sa')) return 'by-sa';
+  if (v.includes('public-domain') || v.includes('pdm') || v === 'pd' || v === 'publicdomain') return 'pdm';
+  if (v.includes('cc0') || v.includes('zero')) return 'cc0';
   if (v.includes('by-nc-sa')) return 'by-nc-sa';
   if (v.includes('by-nc')) return 'by-nc';
+  if (v.includes('by-sa')) return 'by-sa';
+  if (v === 'by' || v.includes('cc-by-4') || v.includes('cc-by-3') || v.includes('attribution')) return 'by';
   if (v.includes('nasa')) return 'nasa';
   return 'unknown';
 }
@@ -73,8 +71,8 @@ function inferFit({ title, description, query, imageType }) {
   const qTerms = String(query)
     .toLowerCase()
     .split(/\W+/)
-    .filter((w) => w.length > 2);
-  const termHits = qTerms.filter((w) => haystack.includes(w)).length;
+    .filter((word) => word.length > 2);
+  const termHits = qTerms.filter((word) => haystack.includes(word)).length;
 
   let fit = termHits * 8;
   if (imageType === 'diagram') {
@@ -135,7 +133,7 @@ async function fetchJson(url, timeoutMs = 9000) {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'EduImageFinder/1.0 (educational image search app)'
+        'User-Agent': 'EduImageFinder/2.0 (educational image search app)'
       }
     });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -146,13 +144,13 @@ async function fetchJson(url, timeoutMs = 9000) {
 }
 
 async function searchOpenverse(query, limit, imageType) {
-  const q = imageType === 'diagram' ? `${query} diagram OR illustration` : query;
+  const q = imageType === 'diagram' || imageType === 'labelled' ? `${query} diagram illustration` : query;
   const params = new URLSearchParams({
     q,
     page_size: String(Math.min(limit, 20)),
     mature: 'false'
   });
-  const data = await fetchJson(`${OPENVERSE_ENDPOINT}?${params}`);
+  const data = await fetchJson(`${OPENVERSE_ENDPOINT}?${params.toString()}`);
   return (data.results || []).map((r) => {
     const license = normaliseLicence(r.license);
     const item = {
@@ -181,7 +179,7 @@ async function searchOpenverse(query, limit, imageType) {
 
 async function searchWikimedia(query, limit, imageType) {
   const enhanced = imageType === 'diagram' || imageType === 'labelled'
-    ? `${query} diagram OR schematic OR illustration`
+    ? `${query} diagram schematic illustration`
     : query;
 
   const params = new URLSearchParams({
@@ -196,7 +194,7 @@ async function searchWikimedia(query, limit, imageType) {
     iiprop: 'url|mime|size|dimensions|extmetadata',
     iiurlwidth: '900'
   });
-  const data = await fetchJson(`${WIKIMEDIA_ENDPOINT}?${params}`);
+  const data = await fetchJson(`${WIKIMEDIA_ENDPOINT}?${params.toString()}`);
   const pages = Object.values(data?.query?.pages || {});
   return pages.map((page) => {
     const ii = page.imageinfo?.[0] || {};
@@ -234,14 +232,14 @@ async function searchNasa(query, limit) {
     media_type: 'image',
     page_size: String(Math.min(limit, 20))
   });
-  const data = await fetchJson(`${NASA_ENDPOINT}?${params}`);
+  const data = await fetchJson(`${NASA_ENDPOINT}?${params.toString()}`);
   const items = data?.collection?.items || [];
-  return items.map((entry) => {
+  return items.map((entry, index) => {
     const d = entry.data?.[0] || {};
     const link = entry.links?.find((l) => l.rel === 'preview' || l.render === 'image') || entry.links?.[0] || {};
     const nasaId = d.nasa_id || '';
     const item = {
-      id: `nasa-${nasaId || Math.random().toString(36).slice(2)}`,
+      id: `nasa-${nasaId || index}`,
       source: 'nasa',
       sourceName: 'NASA Image and Video Library',
       title: cleanText(d.title || 'NASA image'),
@@ -278,10 +276,10 @@ export default async function handler(req, res) {
 
   const imageType = cleanText(req.query.type || 'diagram');
   const licenceFilter = cleanText(req.query.licence || 'classroom');
-  const limit = Math.min(Number(req.query.limit || 16), 30);
+  const limit = Math.min(Math.max(Number(req.query.limit || 16), 1), 30);
   const requestedSources = cleanText(req.query.sources || 'openverse,wikimedia,nasa')
     .split(',')
-    .map((s) => s.trim().toLowerCase())
+    .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
 
   const tasks = [];
@@ -304,6 +302,10 @@ export default async function handler(req, res) {
       errors.push({ source: 'nasa', message: err.message });
       return [];
     }));
+  }
+
+  if (!tasks.length) {
+    return res.status(400).json({ error: 'Select at least one source.' });
   }
 
   const settled = await Promise.all(tasks);
