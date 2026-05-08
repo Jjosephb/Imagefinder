@@ -1,42 +1,111 @@
-# Educational Image Finder
+# TeacherOnCall Image Finder
 
-A small Vercel-ready educational image search app.
+A Vercel-ready React app for educators to search for educationally appropriate, openly licensed images for tests, slides and worksheets.
 
-This version is deliberately static: there is no Vite build, no React dependency, and no `/src/main.jsx` import. That avoids the deployment error where Vercel cannot resolve `/src/main.jsx`.
+## What it searches
 
-## Files
+Subject domain routing:
 
-- `index.html` — app shell
-- `styles.css` — styling
-- `app.js` — browser-side UI logic
-- `api/search.js` — Vercel serverless function that searches Openverse, Wikimedia Commons and NASA
-- `package.json` — minimal Node/Vercel metadata
+- **General / Cross-Domain**: Openverse + Wikimedia Commons
+- **Art**: The Metropolitan Museum of Art + Smithsonian Open Access
+- **Humanities**: The Metropolitan Museum of Art + Smithsonian Open Access
+- **Science / STEM**: NASA Image and Video Library + PubChem
 
-## Deploy on Vercel
+## Licence enforcement
 
-1. Upload/push the whole folder contents to GitHub.
-2. Import the repo into Vercel.
-3. Framework preset: **Other**.
-4. Build command: leave blank / None.
-5. Output directory: leave blank.
-6. Deploy.
+The backend performs a strict final licence gate. Returned images must be one of:
 
-## Local development
+- CC0 / Public Domain
+- CC BY
+- CC BY-NC
 
-Install the Vercel CLI if needed:
+The backend excludes:
+
+- ND / No Derivatives
+- SA / ShareAlike
+- restrictive copyright
+- unknown copyright
+- fair-use-only metadata
+
+## Important Smithsonian note
+
+The app works without a Smithsonian key, but Smithsonian results are skipped unless you add:
 
 ```bash
-npm i -g vercel
+SMITHSONIAN_API_KEY=your_key_here
 ```
 
-Then run:
+Add this in Vercel under **Project Settings → Environment Variables**.
+
+## Local setup
 
 ```bash
-vercel dev
+npm install
+cp .env.example .env
+npm run dev:vercel
 ```
 
-Open the local URL Vercel gives you.
+Use `npm run dev:vercel` so the frontend and `/api/images/search` route run together. `npm run dev` runs the Vite frontend only.
 
-## Notes
+## Deploy to Vercel
 
-The app records licence and attribution metadata, but users should still open the source page before publishing or selling resources.
+1. Upload this folder to a GitHub repository.
+2. Import the repository into Vercel.
+3. Use the detected **Vite** framework preset.
+4. Build command should be:
+
+```bash
+npm run build
+```
+
+5. Output directory should be:
+
+```bash
+dist
+```
+
+## Required root files
+
+These files must be at the top level of your GitHub repo:
+
+```txt
+api/
+src/
+index.html
+package.json
+vite.config.js
+tailwind.config.js
+postcss.config.js
+vercel.json
+README.md
+```
+
+## API endpoint
+
+```txt
+GET /api/images/search?query=meiosis%20diagram&domain=stem
+```
+
+Allowed domain values:
+
+```txt
+general
+art
+humanities
+stem
+```
+
+The API returns a normalised array only:
+
+```json
+[
+  {
+    "imageUrl": "https://example.com/image.jpg",
+    "title": "Example title",
+    "author": "Example author",
+    "source": "Example source",
+    "licenseType": "CC BY",
+    "originalLink": "https://example.com/source"
+  }
+]
+```
