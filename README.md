@@ -1,72 +1,28 @@
 # TeacherOnCall Image Finder
 
-A Vercel-ready React app for educators to search for educationally appropriate, openly licensed images for tests, slides and worksheets.
+A Vercel-ready React app for searching educationally appropriate, open-licence images for tests, slides and worksheets.
 
-## What it searches
+## What this version fixes
 
-Subject domain routing:
+The frontend now calls the simple Vercel API route:
 
-- **General / Cross-Domain**: Openverse + Wikimedia Commons
-- **Art**: The Metropolitan Museum of Art + Smithsonian Open Access
-- **Humanities**: The Metropolitan Museum of Art + Smithsonian Open Access
-- **Science / STEM**: NASA Image and Video Library + PubChem
-
-## Licence enforcement
-
-The backend performs a strict final licence gate. Returned images must be one of:
-
-- CC0 / Public Domain
-- CC BY
-- CC BY-NC
-
-The backend excludes:
-
-- ND / No Derivatives
-- SA / ShareAlike
-- restrictive copyright
-- unknown copyright
-- fair-use-only metadata
-
-## Important Smithsonian note
-
-The app works without a Smithsonian key, but Smithsonian results are skipped unless you add:
-
-```bash
-SMITHSONIAN_API_KEY=your_key_here
+```txt
+/api/search
 ```
 
-Add this in Vercel under **Project Settings → Environment Variables**.
+A compatibility route is also included at:
 
-## Local setup
-
-```bash
-npm install
-cp .env.example .env
-npm run dev:vercel
+```txt
+/api/images/search
 ```
 
-Use `npm run dev:vercel` so the frontend and `/api/images/search` route run together. `npm run dev` runs the Vite frontend only.
+This avoids the common Vercel issue where the frontend receives the text `The page could not be found` instead of JSON.
 
-## Deploy to Vercel
+## Upload to GitHub
 
-1. Upload this folder to a GitHub repository.
-2. Import the repository into Vercel.
-3. Use the detected **Vite** framework preset.
-4. Build command should be:
+After unzipping, upload the **contents of this folder** to your GitHub repository root.
 
-```bash
-npm run build
-```
-
-5. Output directory should be:
-
-```bash
-dist
-```
-
-## Required root files
-
-These files must be at the top level of your GitHub repo:
+Your repo root should show:
 
 ```txt
 api/
@@ -80,32 +36,48 @@ vercel.json
 README.md
 ```
 
-## API endpoint
+Do not upload the whole folder as a nested folder unless you set that folder as the Vercel project root.
+
+## Vercel settings
+
+Use the defaults after importing the GitHub repo:
 
 ```txt
-GET /api/images/search?query=meiosis%20diagram&domain=stem
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
 ```
 
-Allowed domain values:
+## Optional environment variables
+
+Smithsonian Open Access requires an API key for reliable access.
 
 ```txt
-general
-art
-humanities
-stem
+SMITHSONIAN_API_KEY=your_key_here
+RESULT_LIMIT=48
 ```
 
-The API returns a normalised array only:
+If `SMITHSONIAN_API_KEY` is not set, the Smithsonian source is skipped and the app still works.
+
+## API test
+
+After deployment, open:
+
+```txt
+https://your-vercel-domain.vercel.app/api/health
+```
+
+It should return:
 
 ```json
-[
-  {
-    "imageUrl": "https://example.com/image.jpg",
-    "title": "Example title",
-    "author": "Example author",
-    "source": "Example source",
-    "licenseType": "CC BY",
-    "originalLink": "https://example.com/source"
-  }
-]
+{ "ok": true, "service": "TeacherOnCall Image Finder API" }
 ```
+
+Then test:
+
+```txt
+https://your-vercel-domain.vercel.app/api/search?query=meiosis%20diagram&domain=stem
+```
+
+It should return a JSON array.

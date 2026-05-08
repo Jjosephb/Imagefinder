@@ -32,11 +32,21 @@ export default function App() {
         domain
       });
 
-      const response = await fetch(`/api/images/search?${params.toString()}`);
-      const payload = await response.json();
+      const response = await fetch(`/api/search?${params.toString()}`);
+      const contentType = response.headers.get("content-type") || "";
+      const rawText = await response.text();
+
+      let payload;
+      if (contentType.includes("application/json")) {
+        payload = rawText ? JSON.parse(rawText) : null;
+      } else {
+        throw new Error(
+          "The API route is returning a page instead of JSON. Check that api/search.js is at the GitHub repository root and redeploy in Vercel."
+        );
+      }
 
       if (!response.ok) {
-        throw new Error(payload.error || "The search failed.");
+        throw new Error(payload?.error || "The search failed.");
       }
 
       setResults(Array.isArray(payload) ? payload : []);
