@@ -1,13 +1,14 @@
 {
   "name": "edu-image-finder-static",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "A small static Vercel app for finding openly licensed educational images and diagrams.",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "build": "mkdir -p dist && cp index.html styles.css app.js dist/"
   },
   "engines": {
-    "node": ">=18"
+    "node": "20.x"
   }
 }
